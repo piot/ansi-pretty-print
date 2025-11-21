@@ -3,7 +3,7 @@ name = "ansi-pretty-print"
 version = "0.0.1"
 edition = "2024"
 license = "MIT"
-description = ""
+description = "Pretty-printing structured data with ANSI color support and ligatures. Mostly used for debug outputs."
 repository = "https://github.com/piot/ansi-pretty-print"
 
 [dependencies]
