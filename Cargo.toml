@@ -1,0 +1,10 @@
+[package]
+name = "ansi-pretty-print"
+version = "0.0.1"
+edition = "2024"
+license = "MIT"
+description = ""
+repository = "https://github.com/piot/ansi-pretty-print"
+
+[dependencies]
+# tinter ="0.1.0" // TODO: Maybe use tinter in the future?
