@@ -21,24 +21,24 @@ pub enum AnsiColor {
 }
 
 impl AnsiColor {
-    fn to_code(self) -> u8 {
+    const fn to_code(self) -> u8 {
         match self {
-            AnsiColor::Black => 30,
-            AnsiColor::Red => 31,
-            AnsiColor::Green => 32,
-            AnsiColor::Yellow => 33,
-            AnsiColor::Blue => 34,
-            AnsiColor::Magenta => 35,
-            AnsiColor::Cyan => 36,
-            AnsiColor::White => 37,
-            AnsiColor::BrightBlack => 90,
-            AnsiColor::BrightRed => 91,
-            AnsiColor::BrightGreen => 92,
-            AnsiColor::BrightYellow => 93,
-            AnsiColor::BrightBlue => 94,
-            AnsiColor::BrightMagenta => 95,
-            AnsiColor::BrightCyan => 96,
-            AnsiColor::BrightWhite => 97,
+            Self::Black => 30,
+            Self::Red => 31,
+            Self::Green => 32,
+            Self::Yellow => 33,
+            Self::Blue => 34,
+            Self::Magenta => 35,
+            Self::Cyan => 36,
+            Self::White => 37,
+            Self::BrightBlack => 90,
+            Self::BrightRed => 91,
+            Self::BrightGreen => 92,
+            Self::BrightYellow => 93,
+            Self::BrightBlue => 94,
+            Self::BrightMagenta => 95,
+            Self::BrightCyan => 96,
+            Self::BrightWhite => 97,
         }
     }
 }
@@ -59,8 +59,9 @@ impl<'a> Print<'a> {
     }
 }
 
-impl<'a> Print<'a> {
-    pub fn with_indent(mut self, spaces: usize) -> Self {
+impl Print<'_> {
+    #[must_use]
+    pub const fn with_indent(mut self, spaces: usize) -> Self {
         self.spaces_per_indent = spaces;
         self
     }
@@ -99,9 +100,9 @@ impl<'a> Print<'a> {
         if !header.is_empty() {
             todo!()
         }
-        self.line(&"{")?;
+        self.line("{")?;
         {
-            f(self)?
+            f(self)?;
         }
         self.line("}")
     }
@@ -121,12 +122,14 @@ impl<'a> Printer<'a> {
             use_ligature: true,
         }
     }
-    pub fn with_colors(mut self, on: bool) -> Self {
+    #[must_use]
+    pub const fn with_colors(mut self, on: bool) -> Self {
         self.use_color = on;
         self
     }
 
-    pub fn with_ligature(mut self, on: bool) -> Self {
+    #[must_use]
+    pub const fn with_ligature(mut self, on: bool) -> Self {
         self.use_ligature = on;
         self
     }
@@ -163,8 +166,8 @@ impl<'a> Printer<'a> {
         F: FnOnce(&mut Printer<'_>) -> fmt::Result,
     {
         if !header.is_empty() {
-            self.punctuation(&format!("{header}"))?;
-        };
+            self.punctuation(&header.to_string())?;
+        }
 
         self.line("{")?;
 
@@ -315,19 +318,23 @@ impl<'a> Printer<'a> {
         self.write(s)
     }
 
-    pub fn left_arrow(&self) -> &'static str {
+    #[must_use]
+    pub const fn left_arrow(&self) -> &'static str {
         if self.use_ligature { " ← " } else { " <- " }
     }
 
-    pub fn right_arrow(&self) -> &'static str {
+    #[must_use]
+    pub const fn right_arrow(&self) -> &'static str {
         if self.use_ligature { " → " } else { " -> " }
     }
 
-    pub fn both_arrows(&self) -> &'static str {
+    #[must_use]
+    pub const fn both_arrows(&self) -> &'static str {
         if self.use_ligature { " ↔ " } else { " <-> " }
     }
 
-    pub fn phi(&self) -> &'static str {
+    #[must_use]
+    pub const fn phi(&self) -> &'static str {
         if self.use_ligature { "ϕ" } else { "phi" }
     }
 
