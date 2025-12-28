@@ -1,6 +1,6 @@
 # ansi-pretty-print
 
-A Rust library for pretty-printing structured data with ANSI color support and ligatures. Mostly used for debug outputs.
+A Rust library for pretty-printing structured data with ANSI color support and ligatures. Mostly used for debug outputs for compilers.
 
 ## Features
 
@@ -47,4 +47,6 @@ println!("{}", output);
 
 ## License
 
-MIT
+Licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+Copyright (c) 2025 Peter Bjorklund. All Rights Reserved.

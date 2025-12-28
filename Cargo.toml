@@ -1,6 +1,6 @@
 [package]
 name = "ansi-pretty-print"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2024"
 license = "MIT"
 description = "Pretty-printing structured data with ANSI color support and ligatures. Mostly used for debug outputs."

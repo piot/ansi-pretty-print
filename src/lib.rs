@@ -75,10 +75,14 @@ impl Print<'_> {
         Ok(())
     }
 
+    pub fn line_and_pad(&mut self) -> fmt::Result {
+        self.write("\n")?;
+        self.pad()
+    }
+
     #[inline]
     pub fn line<S: AsRef<str>>(&mut self, s: S) -> fmt::Result {
-        self.write("\n")?;
-        self.pad()?;
+        self.line_and_pad()?;
         self.out.write_str(s.as_ref())
     }
 
@@ -90,21 +94,6 @@ impl Print<'_> {
     #[inline]
     pub fn write<S: AsRef<str>>(&mut self, s: S) -> fmt::Result {
         self.out.write_str(s.as_ref())
-    }
-
-    /// Convenience `{ body }` block helper that uses the RAII guard internally.
-    pub fn block<F>(&mut self, header: &str, f: F) -> fmt::Result
-    where
-        F: FnOnce(&mut Print<'_>) -> fmt::Result,
-    {
-        if !header.is_empty() {
-            todo!()
-        }
-        self.line("{")?;
-        {
-            f(self)?;
-        }
-        self.line("}")
     }
 }
 
@@ -132,6 +121,21 @@ impl<'a> Printer<'a> {
     pub const fn with_ligature(mut self, on: bool) -> Self {
         self.use_ligature = on;
         self
+    }
+    #[inline]
+    fn with_color(&mut self, s: &str, color: AnsiColor, bold: bool) -> fmt::Result {
+        if self.use_color {
+            if bold {
+                self.write(format!("\x1b[1;{}m", color.to_code()))?;
+            } else {
+                self.write(format!("\x1b[{}m", color.to_code()))?;
+            }
+        }
+        self.write(s)?;
+        if self.use_color {
+            self.write("\x1b[0m")?;
+        }
+        Ok(())
     }
 
     #[inline]
@@ -166,10 +170,11 @@ impl<'a> Printer<'a> {
         F: FnOnce(&mut Printer<'_>) -> fmt::Result,
     {
         if !header.is_empty() {
-            self.punctuation(&header.to_string())?;
+            self.punctuation(header)?;
         }
 
-        self.line("{")?;
+        self.print.line_and_pad()?;
+        self.punctuation("{")?;
 
         {
             self.print.indent_level += 1;
@@ -177,23 +182,16 @@ impl<'a> Printer<'a> {
             self.print.indent_level -= 1;
         }
 
-        self.line("}")
+        self.print.line_and_pad()?;
+        self.punctuation("}")
     }
 
-    #[inline]
-    fn with_color(&mut self, s: &str, color: AnsiColor, bold: bool) -> fmt::Result {
-        if self.use_color {
-            if bold {
-                self.write(format!("\x1b[1;{}m", color.to_code()))?;
-            } else {
-                self.write(format!("\x1b[{}m", color.to_code()))?;
-            }
-        }
-        self.write(s)?;
-        if self.use_color {
-            self.write("\x1b[0m")?;
-        }
-        Ok(())
+    pub fn mutation_keyword(&mut self, s: &str) -> fmt::Result {
+        self.with_color(s, AnsiColor::BrightRed, true)
+    }
+
+    pub fn reference_operator(&mut self, s: &str) -> fmt::Result {
+        self.with_color(s, AnsiColor::BrightRed, false)
     }
 
     pub fn keyword(&mut self, s: &str) -> fmt::Result {
@@ -206,6 +204,10 @@ impl<'a> Printer<'a> {
 
     pub fn symbol(&mut self, s: &str) -> fmt::Result {
         self.with_color(s, AnsiColor::Yellow, false)
+    }
+
+    pub fn variable(&mut self, s: &str) -> fmt::Result {
+        self.with_color(s, AnsiColor::Blue, false)
     }
 
     pub fn literal(&mut self, s: &str) -> fmt::Result {
@@ -234,6 +236,14 @@ impl<'a> Printer<'a> {
 
     pub fn comment(&mut self, s: &str) -> fmt::Result {
         self.with_color(s, AnsiColor::BrightBlack, false)
+    }
+
+    pub fn decorator(&mut self, s: &str) -> fmt::Result {
+        self.with_color(s, AnsiColor::Yellow, true)
+    }
+
+    pub fn attribute(&mut self, s: &str) -> fmt::Result {
+        self.with_color(s, AnsiColor::Yellow, true)
     }
 
     pub fn type_name(&mut self, s: &str) -> fmt::Result {
@@ -281,37 +291,32 @@ impl<'a> Printer<'a> {
         self.write(s)
     }
 
-    #[inline]
-    fn colored(&mut self, s: &str, color: AnsiColor, bold: bool) -> fmt::Result {
-        self.with_color(s, color, bold)
-    }
-
     pub fn register(&mut self, s: &str) -> fmt::Result {
-        self.colored(s, AnsiColor::White, false)
+        self.with_color(s, AnsiColor::White, false)
     }
 
     pub fn register_read(&mut self, s: &str) -> fmt::Result {
-        self.colored(s, AnsiColor::Green, false)
+        self.with_color(s, AnsiColor::Green, false)
     }
 
     pub fn register_write(&mut self, s: &str) -> fmt::Result {
-        self.colored(s, AnsiColor::Red, false)
+        self.with_color(s, AnsiColor::Red, false)
     }
 
     pub fn frame_address(&mut self, s: &str) -> fmt::Result {
-        self.colored(s, AnsiColor::Cyan, true)
+        self.with_color(s, AnsiColor::Cyan, true)
     }
 
     pub fn frame_address_write(&mut self, s: &str) -> fmt::Result {
-        self.colored(s, AnsiColor::Red, true)
+        self.with_color(s, AnsiColor::Red, true)
     }
 
     pub fn frame_address_read(&mut self, s: &str) -> fmt::Result {
-        self.colored(s, AnsiColor::Green, true)
+        self.with_color(s, AnsiColor::Green, true)
     }
 
     pub fn heap_address(&mut self, s: &str) -> fmt::Result {
-        self.colored(s, AnsiColor::Cyan, true)
+        self.with_color(s, AnsiColor::Cyan, true)
     }
 
     pub fn punctuation(&mut self, s: &str) -> fmt::Result {
@@ -321,6 +326,16 @@ impl<'a> Printer<'a> {
     #[must_use]
     pub const fn left_arrow(&self) -> &'static str {
         if self.use_ligature { " ← " } else { " <- " }
+    }
+
+    #[must_use]
+    pub const fn left_fat_arrow(&self) -> &'static str {
+        if self.use_ligature { " ⇦ " } else { " <= " }
+    }
+
+    #[must_use]
+    pub const fn right_fat_arrow(&self) -> &'static str {
+        if self.use_ligature { " ⇨ " } else { " => " }
     }
 
     #[must_use]
